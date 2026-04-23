@@ -1,4 +1,4 @@
-package processors;
+package aresbase.processors;
 
 import aresbase.tasks.ColonyTask;
 

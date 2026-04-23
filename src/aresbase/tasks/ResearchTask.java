@@ -1,4 +1,6 @@
 package aresbase.tasks;
+import aresbase.model.Resource;
+
 import java.util.*;
 
  // this is the Parent Task class and other xTask classes extend this class
