@@ -1,6 +1,8 @@
 package aresbase.tasks;
 import java.util.*;
 
+import aresbase.model.Resource;
+
 public class EngineeringTask extends ColonyTask {
 
     public EngineeringTask(String name, int reward, Map<Resource, Integer> required){

@@ -2,6 +2,8 @@ package aresbase.tasks;
 
 import java.util.*;
 
+import aresbase.model.Resource;
+
 public abstract class ColonyTask {
 
     private final String name;
