@@ -17,15 +17,26 @@ public abstract class ColonyTask {
     }
 
     public String getName(){
+
          return this.name;
-    }
+
+     }
+
 
     public int getReward(){
+
+
          return this.reward;
+
+
     }
 
     public Map<Resource, Integer> getRequired(){
          return new HashMap<>(required);
+
     }
+
+
+    public abstract  String getType(); // will be used in the child classes to return the type of the task
 
 }

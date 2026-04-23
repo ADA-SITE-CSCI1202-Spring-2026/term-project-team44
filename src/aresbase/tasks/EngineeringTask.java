@@ -13,5 +13,8 @@ public class EngineeringTask extends ColonyTask {
 
     // LATER ADD method to return type
 
-
+    @Override
+    public String getType(){
+        return "Engineering";
+    }
 }
