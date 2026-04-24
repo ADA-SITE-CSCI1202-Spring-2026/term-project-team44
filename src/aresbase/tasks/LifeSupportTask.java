@@ -16,6 +16,7 @@ public class LifeSupportTask extends ColonyTask{
 
     @Override
     public String getType(){
+
         return "Life Support";
     }
 
