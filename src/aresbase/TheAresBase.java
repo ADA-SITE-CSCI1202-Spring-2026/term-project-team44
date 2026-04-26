@@ -1,13 +1,15 @@
 package aresbase;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.scene.image.Image;
-import java.awt.*;
+import javafx.util.Duration;
 
 
 public class TheAresBase extends Application {
@@ -35,6 +37,14 @@ public class TheAresBase extends Application {
         root.getRowConstraints().addAll(row, row);
         Image star = new Image("/resources/star.png");
         stage.getIcons().add(star);
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(3), event -> {
+            System.out.println("New task");
+        }));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+        stage.setOnCloseRequest(event -> {
+            timeline.stop();
+        });
         root.add(taskQueue, 0, 0);
         root.add(colonyVitals, 1, 0);
         root.add(cargoReplicator, 0, 1);
