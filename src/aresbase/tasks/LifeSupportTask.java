@@ -1,21 +1,18 @@
 package aresbase.tasks;
 
-import aresbase.model.Resource; // import it so this file in this package could see Resource class from other package
+public class LifeSupportTask extends ColonyTask {
 
-import java.util.*;
-
-
-public class LifeSupportTask extends ColonyTask{
-
-    public LifeSupportTask(String name, int reward, Map<Resource, Integer> required) {
-
-        super(name, reward, required);
-
-
+    public LifeSupportTask() {
+        super("Life Support Task", 5, 5, 5, 5, 5);
     }
 
     @Override
-    public String getType(){
+    public String toString() {
+        return "Need life support";
+    }
+
+    @Override
+    public String getType() {
 
         return "Life Support";
     }
