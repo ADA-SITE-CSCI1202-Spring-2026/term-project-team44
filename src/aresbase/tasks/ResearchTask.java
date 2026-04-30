@@ -1,23 +1,21 @@
 package aresbase.tasks;
-import aresbase.model.Resource;
 
-import java.util.*;
+// this is the Parent Task class and other xTask classes extend this class
+public class ResearchTask extends ColonyTask {
 
- // this is the Parent Task class and other xTask classes extend this class
-public class ResearchTask  extends ColonyTask{
-
-    public ResearchTask(String name, int reward, Map<Resource, Integer> required) {
-
-        super(name, reward, required);
+    public ResearchTask() {
+        super("Research Task", 5, 5, 5, 5, 5);
     }
 
+    @Override
+    public String toString() {
+        return "Research Task";
+    }
 
-     @Override
-     public String getType(){
-         return "Research";
-     }
-
-
+    @Override
+    public String getType() {
+        return "Research";
+    }
 
 
 }

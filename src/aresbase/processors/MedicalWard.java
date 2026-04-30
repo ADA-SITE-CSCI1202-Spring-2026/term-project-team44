@@ -22,5 +22,4 @@ public class MedicalWard implements IProcessor {
     }
 
 
-
 }
