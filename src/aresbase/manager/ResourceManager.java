@@ -2,14 +2,16 @@ package aresbase.manager;
 
 import aresbase.model.Resource;
 import aresbase.tasks.ColonyTask;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
 public class ResourceManager {
-
-    private HashMap<Resource, Integer> stock = new HashMap<>();
-    private Queue<ColonyTask> taskQueue = new LinkedList<>();
+    private final ObservableMap<Resource, Integer> stock = FXCollections.observableMap(new LinkedHashMap<>());
+    private final Queue<ColonyTask> taskQueue = new LinkedList<>();
 
     public ResourceManager() {
         // The starting part
@@ -19,8 +21,16 @@ public class ResourceManager {
         stock.put(Resource.CREDITS, 399);
     }
 
+    public void addResource(Resource key, Integer value) {
+        stock.put(key, value);
+    }
+
     public void addTask(ColonyTask task) {
         taskQueue.add(task);
+    }
+
+    public Integer getResourceQuantity(Resource key) {
+        return stock.get(key);
     }
 
     public ColonyTask getTask() {
@@ -37,8 +47,8 @@ public class ResourceManager {
     }
 
 
-    public HashMap<Resource, Integer> getAllView() { // display all the resources at once
-        return new HashMap<>(stock);
+    public ObservableMap<Resource, Integer> getStock() {
+        return stock;
     }
 
 
