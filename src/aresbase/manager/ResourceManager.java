@@ -4,6 +4,9 @@ import aresbase.model.Resource;
 import aresbase.tasks.ColonyTask;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -94,13 +97,18 @@ public class ResourceManager {
         return true;
     }
 
+    public void saveState(String filename) {
 
+        try(BufferedWriter writer= new BufferedWriter(new FileWriter("src/aresbase/manager/state.txt"))) {
+            writer.write(filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     public void loadState(HashMap<Resource, Integer> restored) {
         // this will be used in order to load a saved game
         stock.clear(); // FOR SAFETY
         stock.putAll(restored);
-
-
     }
 
 

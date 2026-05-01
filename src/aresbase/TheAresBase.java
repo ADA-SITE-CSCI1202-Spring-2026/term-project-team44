@@ -22,6 +22,9 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
 
@@ -132,7 +135,6 @@ public class TheAresBase extends Application {
         menu.setPromptText("Items");
         menu.setOnAction(_ -> {
             Resource selected = Resource.valueOf(menu.getValue());
-                    //rm.getResourceQuantity(Resource.valueOf(menu.getValue()));
             display_count.setText("You have " + rm.getResourceQuantity(selected) + " " + selected);
         });
         Label unitLabel = new Label("Choose quantity");
@@ -170,8 +172,11 @@ public class TheAresBase extends Application {
         HBox.setMargin(message, new Insets(10));
         cargoReplicator.getChildren().addAll(menuBar, hb, hb1, hb2);
         HBox.setMargin(display_count, new Insets(10));
-        //HBox.setMargin(buy, new Insets(15));
-        stage.setOnCloseRequest(_ -> timeline.stop());
+        stage.setOnCloseRequest(_ -> {
+            timeline.stop();
+            rm.saveState(sb.toString());
+
+        });
         root.add(taskQueue, 0, 0);
         root.add(colonyVitals, 1, 0);
         root.add(cargoReplicator, 0, 1);
