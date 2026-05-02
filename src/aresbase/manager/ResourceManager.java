@@ -4,13 +4,9 @@ import aresbase.model.Resource;
 import aresbase.tasks.ColonyTask;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Queue;
+
+import java.io.*;
+import java.util.*;
 
 public class ResourceManager {
     private final ObservableMap<Resource, Integer> stock = FXCollections.observableMap(new LinkedHashMap<>());
@@ -75,6 +71,11 @@ public class ResourceManager {
         return true;
     }
 
+    public Queue<ColonyTask> getTaskQueue() {
+        Queue<ColonyTask> queue = new LinkedList<>(taskQueue);
+        return queue;
+    }
+
     // BUY 1 UNIT OF given resource, returns true if success, returns false if money is less
     public boolean purchase(Resource r, int quantity, int unitCost) {
 
@@ -98,17 +99,62 @@ public class ResourceManager {
     }
 
     public void saveState(String filename) {
-
-        try(BufferedWriter writer= new BufferedWriter(new FileWriter("src/aresbase/manager/state.txt"))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("src/aresbase/manager/state.txt"))) {
+            for (Map.Entry<Resource, Integer> ent : stock.entrySet()) {
+                writer.write(ent.getKey().toString() + "=" + ent.getValue() + "\n");
+            }
+            writer.write("\n");
+            for (ColonyTask task : taskQueue) {
+                writer.write(task.serialize() + "\n");
+            }
+            writer.write("\nlogs=\n");
             writer.write(filename);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public void loadState(HashMap<Resource, Integer> restored) {
-        // this will be used in order to load a saved game
-        stock.clear(); // FOR SAFETY
-        stock.putAll(restored);
+
+    public String getState() {
+        File file = new File("src/aresbase/manager/state.txt");
+
+        if (!file.exists()) {
+            System.out.println("Failed to restore state");
+            return "";
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            for (Resource i : stock.keySet()) {
+                String str = reader.readLine();
+                if (str != null) {
+                    if (str.contains("=")) {
+                        String num = str.split("=")[1];
+                        stock.put(i, Integer.valueOf(num));
+                    }
+                }
+
+            }
+            reader.readLine();
+            String line;
+            StringBuilder builder = new StringBuilder();
+            boolean read = false;
+            while ((line = reader.readLine()) != null) {
+                if (line.equals("logs=")) {
+                    read = true;
+                    continue;
+                }
+                if (read) {
+                    builder.append(line).append("\n");
+                } else {
+                    taskQueue.add(ColonyTask.deserialize(line));
+                }
+            }
+            return builder.toString();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
 
