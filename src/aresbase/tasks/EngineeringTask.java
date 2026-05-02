@@ -2,15 +2,15 @@ package aresbase.tasks;
 
 public class EngineeringTask extends ColonyTask {
 
-    public EngineeringTask() {
-        super("Engineering Task", 5, 5, 5, 5, 5);
+    public EngineeringTask(boolean isDone) {
+        super("Engineering Task", 5, 5, 5, 5, isDone);
     }
 
     // LATER ADD method to return type
 
     @Override
     public String toString() {
-        return "Fix the engine!";
+        return "EngineeringTask";
     }
 
     @Override

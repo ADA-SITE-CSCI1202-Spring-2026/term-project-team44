@@ -22,9 +22,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+
 import java.util.Map;
 import java.util.Random;
 
@@ -35,6 +33,8 @@ public class TheAresBase extends Application {
         stage.setTitle("The Ares Base");
         GridPane root = new GridPane();
         StringBuilder sb = new StringBuilder();
+        ResourceManager rm = new ResourceManager();
+        sb.append(rm.getState());
         TextArea logs = new TextArea();
         VBox taskQueue = new VBox(); /*(The Crisis List): This panel displays a visual list of pending
         maintenance tasks and colony emergencies.*/
@@ -60,11 +60,9 @@ public class TheAresBase extends Application {
         root.getRowConstraints().addAll(row1, row2);
         Image star = new Image("/resources/star.png");
         stage.getIcons().add(star);
-
         Random rand = new Random();
-        ResourceManager rm = new ResourceManager();
-        ObservableList<String> tasks_ui = FXCollections.observableArrayList();
-        ListView<String> listView = new ListView<>();
+        ObservableList<ColonyTask> tasks_ui = FXCollections.observableArrayList();
+        ListView<ColonyTask> listView = new ListView<>();
         listView.setItems(tasks_ui);
         ObservableList<Map.Entry<Resource, Integer>> data = FXCollections.observableArrayList();
         data.setAll(rm.getStock().entrySet());
@@ -73,21 +71,21 @@ public class TheAresBase extends Application {
             ColonyTask task;
             switch (rand.nextInt(3)) {
                 case 0:
-                    task = new EngineeringTask();
+                    task = new EngineeringTask(false);
                     rm.addTask(task);
-                    tasks_ui.add(task.toString());
+                    tasks_ui.setAll(rm.getTaskQueue());
                     sb.append(task).append(" added\n");
                     break;
                 case 1:
-                    task = new LifeSupportTask();
+                    task = new LifeSupportTask(false);
                     rm.addTask(task);
-                    tasks_ui.add(task.toString());
+                    tasks_ui.setAll(rm.getTaskQueue());
                     sb.append(task).append(" added\n");
                     break;
                 case 2:
-                    task = new ResearchTask();
+                    task = new ResearchTask(false);
                     rm.addTask(task);
-                    tasks_ui.add(task.toString());
+                    tasks_ui.setAll(rm.getTaskQueue());
                     sb.append(task).append(" added\n");
                     break;
             }
@@ -117,7 +115,11 @@ public class TheAresBase extends Application {
 
         resourceCol.prefWidthProperty().bind(colonyVitals.widthProperty().multiply(0.6));
         amountCol.prefWidthProperty().bind(colonyVitals.widthProperty().multiply(0.4));
-        taskQueue.getChildren().add(listView);
+        Button execute = new Button("Execute");
+        VBox.setMargin(execute, new Insets(0, 10, 10, 10));
+
+
+        taskQueue.getChildren().addAll(listView, execute);
         VBox.setMargin(listView, new Insets(15));
         colonyVitals.setPadding(new Insets(15));
         logs.setEditable(false);
@@ -153,7 +155,7 @@ public class TheAresBase extends Application {
             data.setAll(rm.getStock().entrySet());
             sb.append(unit.getValue()).append(" units of ").append(menu.getValue()).append(" bought!\n");
             logs.setText(sb.toString());
-            display_count.setText("You have "+ rm.getResourceQuantity(Resource.valueOf(menu.getValue()))+" "+menu.getValue());
+            display_count.setText("You have " + rm.getResourceQuantity(Resource.valueOf(menu.getValue())) + " " + menu.getValue());
 
         });
         HBox hb = new HBox();

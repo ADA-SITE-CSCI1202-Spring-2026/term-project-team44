@@ -2,13 +2,13 @@ package aresbase.tasks;
 
 public class LifeSupportTask extends ColonyTask {
 
-    public LifeSupportTask() {
-        super("Life Support Task", 5, 5, 5, 5, 5);
+    public LifeSupportTask(boolean isDone) {
+        super("Life Support Task", 5, 5, 5, 5, isDone);
     }
 
     @Override
     public String toString() {
-        return "Need life support";
+        return "LifeSupportTask";
     }
 
     @Override
