@@ -11,17 +11,44 @@ import java.util.*;
 public class ResourceManager {
     private final ObservableMap<Resource, Integer> stock = FXCollections.observableMap(new LinkedHashMap<>());
     private final Queue<ColonyTask> taskQueue = new LinkedList<>();
+    private final HashMap<Resource, Integer> pricelist = new HashMap<>();
 
     public ResourceManager() {
         // The starting part
-        stock.put(Resource.OXYGEN, 49);
-        stock.put(Resource.RATIONS, 30);
-        stock.put(Resource.SPARE_PARTS, 20);
-        stock.put(Resource.CREDITS, 399);
+        stock.put(Resource.OXYGEN, 100);
+        stock.put(Resource.RATIONS, 110);
+        stock.put(Resource.SPARE_PARTS, 105);
+        stock.put(Resource.CREDITS, 500);
+        pricelist.put(Resource.OXYGEN, 8);
+        pricelist.put(Resource.RATIONS, 12);
+        pricelist.put(Resource.SPARE_PARTS, 20);
     }
 
-    public void addResource(Resource key, Integer value) {
-        stock.put(key, value);
+    public void decreaseOxygen() {
+        stock.merge(Resource.OXYGEN, -1, Integer::sum);
+    }
+
+    public String addResource(Resource r, Integer i) {
+        int total = i * pricelist.get(r);
+        if (total <= stock.get(Resource.CREDITS)) {
+            switch (r) {
+                case OXYGEN:
+                    stock.merge(Resource.OXYGEN, i, Integer::sum);
+                    break;
+                case RATIONS:
+                    stock.merge(Resource.RATIONS, i, Integer::sum);
+                    break;
+                case SPARE_PARTS:
+                    stock.merge(Resource.SPARE_PARTS, i, Integer::sum);
+                    break;
+            }
+            stock.merge(Resource.CREDITS, -total, Integer::sum);
+            return i + " " + r + " added";
+
+        } else {
+            return String.valueOf("Unsuccessful! "+(i*pricelist.get(r)-stock.get(Resource.CREDITS))+" Credits needed");
+        }
+
     }
 
     public void addTask(ColonyTask task) {
@@ -34,6 +61,10 @@ public class ResourceManager {
 
     public ColonyTask getTask() {
         return taskQueue.poll();
+    }
+
+    public ColonyTask seekTask() {
+        return taskQueue.peek();
     }
 
     public int getCredits() { // The GUI will call this method so it can display the available amount of credits(money)
@@ -51,24 +82,32 @@ public class ResourceManager {
     }
 
 
-    public boolean tryToConsume(ColonyTask task) {
+    public String tryExecute(ColonyTask task) {
 
         HashMap<Resource, Integer> needed = task.getRequired();
 
         // VALIDATE
+        StringBuilder deficit = new StringBuilder();
+        boolean has_enough = true;
         for (HashMap.Entry<Resource, Integer> e : needed.entrySet()) {
-            if (getAmount(e.getKey()) < e.getValue()) {
-                return false;
+            if (stock.get(e.getKey()) < e.getValue()) {
+                has_enough = false;
+                if (deficit.isEmpty()) {
+                    deficit.append("Restock ").append(e.getKey());
+                } else deficit.append(", ").append(e.getKey());
             }
         }
-
+        if (!has_enough) {
+            return deficit.toString();
+        }
         // APPLY
         for (HashMap.Entry<Resource, Integer> e : needed.entrySet()) {
             stock.merge(e.getKey(), -e.getValue(), Integer::sum);
         }
 
         stock.merge(Resource.CREDITS, task.getReward(), Integer::sum);
-        return true;
+        taskQueue.poll();
+        return "Success";
     }
 
     public Queue<ColonyTask> getTaskQueue() {
@@ -105,7 +144,7 @@ public class ResourceManager {
             }
             writer.write("\n");
             for (ColonyTask task : taskQueue) {
-                writer.write(task.serialize() + "\n");
+                writer.write(task.getName() + "\n");
             }
             writer.write("\nlogs=\n");
             writer.write(filename);
