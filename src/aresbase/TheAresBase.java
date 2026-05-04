@@ -2,10 +2,8 @@ package aresbase;
 
 import aresbase.manager.ResourceManager;
 import aresbase.model.Resource;
+import aresbase.processors.SimulationController;
 import aresbase.tasks.ColonyTask;
-import aresbase.tasks.EngineeringTask;
-import aresbase.tasks.LifeSupportTask;
-import aresbase.tasks.ResearchTask;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
@@ -24,18 +22,46 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.Map;
-import java.util.Random;
 
 
 public class TheAresBase extends Application {
+    private Stage stage;
+    private SimulationController controller;
+    private Timeline timeline;
+
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
         stage.setTitle("The Ares Base");
         GridPane root = new GridPane();
-        StringBuilder sb = new StringBuilder();
         ResourceManager rm = new ResourceManager();
-        sb.append(rm.getState());
+        this.controller = new SimulationController(rm);
+        ColumnConstraints col1 = new ColumnConstraints();
+        ColumnConstraints col2 = new ColumnConstraints();
+        RowConstraints row1 = new RowConstraints();
+        RowConstraints row2 = new RowConstraints();
+        ListView<ColonyTask> listView = new ListView<>();
+        ComboBox<Resource> menu = new ComboBox<>();
+        ComboBox<Integer> unit = new ComboBox<>();
+        ObservableList<ColonyTask> tasks_ui = FXCollections.observableArrayList();
+        ObservableList<Map.Entry<Resource, Integer>> resource_data = FXCollections.observableArrayList();
+        HBox hBox = new HBox();
+        HBox hb = new HBox();
+        HBox hb1 = new HBox();
+        HBox hb2 = new HBox();
+        Button execute = new Button("Execute");
+        Label status = new Label("Executing...");
+        Label result = new Label("Result:");
+        Label unitLabel = new Label("Choose quantity");
+        Button buy = new Button("Buy");
+        Label message = new Label("Bought!");
+        Label menuBar = new Label("Store");
+        Label display_count = new Label("Choose a resource");
         TextArea logs = new TextArea();
+        controller.loadState();
+        logs.setText(controller.getLogs());
+        logs.setScrollTop(Double.MAX_VALUE);
+
         VBox taskQueue = new VBox(); /*(The Crisis List): This panel displays a visual list of pending
         maintenance tasks and colony emergencies.*/
         TableView<Map.Entry<Resource, Integer>> colonyVitals = new TableView<>(); /*(The State): This panel
@@ -44,34 +70,37 @@ public class TheAresBase extends Application {
         menu of available resources and a "Synthesize/Buy" button*/
         VBox baseTerminal = new VBox(); /*(The System Log): A scrolling text area that acts as a live feed of
         everything happening on the station*/
+
         taskQueue.setBackground(new Background(new BackgroundFill(Color.LIGHTBLUE, new CornerRadii(0), new Insets(0))));
         colonyVitals.setBackground(new Background(new BackgroundFill(Color.STEELBLUE, new CornerRadii(0), new Insets(0))));
         cargoReplicator.setBackground(new Background(new BackgroundFill(Color.CORNFLOWERBLUE, new CornerRadii(0), new Insets(0))));
         baseTerminal.setBackground(new Background(new BackgroundFill(Color.DEEPSKYBLUE, new CornerRadii(0), new Insets(0))));
-        ColumnConstraints col1 = new ColumnConstraints();
-        ColumnConstraints col2 = new ColumnConstraints();
+
+
         col1.setPercentWidth(60);
         col2.setPercentWidth(40);
-        RowConstraints row1 = new RowConstraints();
-        RowConstraints row2 = new RowConstraints();
         row1.setPercentHeight(60);
         row2.setPercentHeight(40);
         root.getColumnConstraints().addAll(col1, col2);
         root.getRowConstraints().addAll(row1, row2);
+
         try {
             Image star = new Image("/resources/star.png");
             stage.getIcons().add(star);
         } catch (Exception e) {
             System.out.println("Icon not loaded: " + e.getMessage());
         }
-        Random rand = new Random();
-        ObservableList<ColonyTask> tasks_ui = FXCollections.observableArrayList();
-        ListView<ColonyTask> listView = new ListView<>();
-        listView.setItems(tasks_ui);
-        ObservableList<Map.Entry<Resource, Integer>> data = FXCollections.observableArrayList();
-        data.setAll(rm.getStock().entrySet());
 
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(3), _ -> generateTask(rand, rm, tasks_ui, sb, logs, data)));
+        listView.setItems(tasks_ui);
+        resource_data.setAll(rm.getStock().entrySet());
+
+        this.timeline = new Timeline(new KeyFrame(Duration.seconds(3), _ -> {
+            controller.spawnRandomTask();
+            tasks_ui.setAll(controller.getTaskQueue());
+            listView.scrollTo(tasks_ui.size() - 1);
+            logs.setText(controller.getLogs());
+            logs.setScrollTop(Double.MAX_VALUE);
+        }));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
 
@@ -89,26 +118,17 @@ public class TheAresBase extends Application {
                 new SimpleIntegerProperty(cell.getValue().getValue())
         );
 
-        colonyVitals.setItems(data);
+        colonyVitals.setItems(resource_data);
         colonyVitals.getColumns().add(resourceCol);
         colonyVitals.getColumns().add(amountCol);
-
         resourceCol.prefWidthProperty().bind(colonyVitals.widthProperty().multiply(0.6));
         amountCol.prefWidthProperty().bind(colonyVitals.widthProperty().multiply(0.4));
-        HBox hBox = new HBox();
-        Button execute = new Button("Execute");
-        Label status = new Label("Executing...");
-        Label result = new Label("Result:");
+
         result.setVisible(false);
         status.setVisible(false);
         hBox.getChildren().addAll(execute, status, result);
 
-        execute.setOnAction(e -> {
-            if (rm.seekTask() == null) {
-                result.setVisible(true);
-                result.setText("Queue is empty");
-                return;
-            }
+        execute.setOnAction(_ -> {
             status.setVisible(true);
             PauseTransition pause = new PauseTransition(Duration.seconds(1));
             pause.setOnFinished(_ -> {
@@ -116,13 +136,12 @@ public class TheAresBase extends Application {
                 result.setVisible(true);
             });
             pause.play();
-
-            try {
-                result.setText(rm.tryExecute(rm.seekTask()));
-                data.setAll(rm.getStock().entrySet());
-            } catch (Exception ex) {
-                result.setText("ERROR:  " + ex.getMessage());
-            }
+            result.setText(controller.processNextTask());
+            logs.setText(controller.getLogs());
+            logs.setScrollTop(Double.MAX_VALUE);
+            resource_data.setAll(rm.getStock().entrySet());
+            tasks_ui.setAll(controller.getTaskQueue());
+            listView.scrollTo(tasks_ui.size() - 1);
         });
 
 
@@ -133,33 +152,39 @@ public class TheAresBase extends Application {
         VBox.setMargin(listView, new Insets(15));
         colonyVitals.setPadding(new Insets(15));
         logs.setEditable(false);
-        logs.setText("");
         baseTerminal.getChildren().add(logs);
         VBox.setVgrow(logs, Priority.ALWAYS);
         VBox.setMargin(logs, new Insets(15));
-        ComboBox<String> menu = new ComboBox<>();
-        ComboBox<Integer> unit = new ComboBox<>();
         unit.setPromptText("number");
-        Label menuBar = new Label("Store");
-        Label display_count = new Label("Choose a resource");
-        menu.getItems().addAll("OXYGEN", "RATIONS", "SPARE_PARTS");
+        menu.getItems().addAll(Resource.OXYGEN, Resource.RATIONS, Resource.SPARE_PARTS);
         unit.getItems().addAll(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         menu.setPromptText("Items");
         menu.setOnAction(_ -> {
-            Resource selected = Resource.valueOf(menu.getValue());
-            display_count.setText("You have " + rm.getResourceQuantity(selected) + " " + selected);
+            Resource selected = menu.getValue();
+            if (unit.getValue() != null) {
+                unitLabel.setText("Price is " + rm.getPrice(menu.getValue(), unit.getValue()));
+            }
+            display_count.setText("You have " + rm.getAmount(selected) + " " + selected);
         });
-        Label unitLabel = new Label("Choose quantity");
-        Button buy = new Button("Buy");
+        unit.setOnAction(_ -> {
+            if (menu.getValue() != null) {
+                unitLabel.setText("Price is " + rm.getPrice(menu.getValue(), unit.getValue()));
+            } else {
+                unitLabel.setText(String.valueOf(unit.getValue()));
+            }
+        });
+
         buy.disableProperty().bind(menu.valueProperty().isNull().or(unit.valueProperty().isNull()));
-        Label message = new Label("Bought!");
         message.setVisible(false);
 
+        buy.setOnAction(_ -> {
+            message.setVisible(true);
+            message.setText(controller.buy_resources(menu.getValue(), unit.getValue()));
+            resource_data.setAll(rm.getStock().entrySet());
+            logs.setText(controller.getLogs());
+            logs.setScrollTop(Double.MAX_VALUE);
+        });
 
-        buy.setOnAction(_ -> purchase(message, rm, menu, unit, unitLabel, sb, logs, display_count, data));
-        HBox hb = new HBox();
-        HBox hb1 = new HBox();
-        HBox hb2 = new HBox();
         hb.getChildren().addAll(menu, display_count);
         hb1.getChildren().addAll(unit, unitLabel);
         hb2.getChildren().addAll(buy, message);
@@ -173,9 +198,9 @@ public class TheAresBase extends Application {
         HBox.setMargin(message, new Insets(10));
         cargoReplicator.getChildren().addAll(menuBar, hb, hb1, hb2);
         HBox.setMargin(display_count, new Insets(10));
-        stage.setOnCloseRequest(_ -> {
-            timeline.stop();
-            rm.saveState(sb.toString());
+        stage.setOnCloseRequest(event -> {
+            event.consume();
+            handleCloseRequest();
         });
         root.add(taskQueue, 0, 0);
         root.add(colonyVitals, 1, 0);
@@ -186,42 +211,30 @@ public class TheAresBase extends Application {
         stage.show();
     }
 
-    private void purchase(Label message, ResourceManager rm, ComboBox<String> menu, ComboBox<Integer> unit,
-                          Label unitLabel, StringBuilder sb, TextArea logs, Label display_count, ObservableList<Map.Entry<Resource, Integer>> data) {
-        message.setVisible(true);
-        String text = rm.addResource(Resource.valueOf(menu.getValue()), unit.getValue());
-        message.setText(text);
-        PauseTransition pause = new PauseTransition(Duration.seconds(1));
-        pause.setOnFinished(_ -> message.setVisible(false));
-        pause.play();
-        unitLabel.setText(unit.getValue() + " units of " + menu.getValue());
-        sb.append(unit.getValue()).append(" units of ").append(menu.getValue()).append(" bought!\n");
-        logs.setText(sb.toString());
-        display_count.setText("You have " + rm.getResourceQuantity(Resource.valueOf(menu.getValue())) + " " + menu.getValue());
-        data.setAll(rm.getStock().entrySet());
+    private void handleCloseRequest() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Closing Ares Base");
+        alert.setHeaderText("What would you like to do before leaving?");
+        alert.setContentText("Choose an option:");
+
+        ButtonType saveButton = new ButtonType("Save State");
+        ButtonType clearButton = new ButtonType("Start Fresh Next Time");
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(saveButton, clearButton, cancelButton);
+        alert.showAndWait().ifPresent(choice -> handleCloseChoice(choice, saveButton, clearButton));
     }
 
-    private void generateTask(Random rand, ResourceManager rm, ObservableList<ColonyTask> tasks_ui, StringBuilder sb, TextArea logs, ObservableList<Map.Entry<Resource, Integer>> data) {
-
-        ColonyTask task = switch (rand.nextInt(8)) {
-            case 0 -> new EngineeringTask("Solar Array Repair", 6, 4, 100);
-            case 1 -> new EngineeringTask("Hull Breach Sealing", 9, 6, 250);
-            case 2 -> new EngineeringTask("Power Grid Reroute", 4, 2, 110);
-
-            case 3 -> new LifeSupportTask("CO2 Scrubber Maintenance", 3, 15, 80);
-            case 4 -> new LifeSupportTask("Water Recycler Repair", 5, 10, 120);
-            case 5 -> new LifeSupportTask("Hydroponics Bay Leak Seal", 2, 10, 90);
-
-            case 6 -> new ResearchTask("Pathogen Analysis", 15, 15, 200);
-            case 7 -> new ResearchTask("Radiation Exposure Study", 10, 10, 350);
-            default -> new ResearchTask("Crew Psych Assessment", 5, 5, 150);
-        };
-        rm.addTask(task);
-        tasks_ui.setAll(rm.getTaskQueue());
-        sb.append(task.getName()).append(" task added\n");
-        logs.setText(sb.toString());
-        rm.decreaseOxygen();
-        data.setAll(rm.getStock().entrySet());
-
+    private void handleCloseChoice(ButtonType choice, ButtonType saveButton, ButtonType clearButton) {
+        if (choice == saveButton) {
+            timeline.stop();
+            controller.saveState();
+            stage.close();
+        } else if (choice == clearButton) {
+            timeline.stop();
+            controller.clearStateFile();
+            stage.close();
+        }
     }
+
 }
