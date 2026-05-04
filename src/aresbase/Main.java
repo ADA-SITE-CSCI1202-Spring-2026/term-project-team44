@@ -5,5 +5,4 @@ public class Main {
         TheAresBase.launch(TheAresBase.class, args);
     }
 
-    // put "require" map in Main
 }
