@@ -58,8 +58,12 @@ public class TheAresBase extends Application {
         row2.setPercentHeight(40);
         root.getColumnConstraints().addAll(col1, col2);
         root.getRowConstraints().addAll(row1, row2);
-        Image star = new Image("/resources/star.png");
-        stage.getIcons().add(star);
+        try {
+            Image star = new Image("/resources/star.png");
+            stage.getIcons().add(star);
+        } catch (Exception e) {
+            System.out.println("Icon not loaded: " + e.getMessage());
+        }
         Random rand = new Random();
         ObservableList<ColonyTask> tasks_ui = FXCollections.observableArrayList();
         ListView<ColonyTask> listView = new ListView<>();
@@ -100,6 +104,11 @@ public class TheAresBase extends Application {
         hBox.getChildren().addAll(execute, status, result);
 
         execute.setOnAction(e -> {
+            if (rm.seekTask() == null) {
+                result.setVisible(true);
+                result.setText("Queue is empty");
+                return;
+            }
             status.setVisible(true);
             PauseTransition pause = new PauseTransition(Duration.seconds(1));
             pause.setOnFinished(_ -> {
@@ -107,10 +116,16 @@ public class TheAresBase extends Application {
                 result.setVisible(true);
             });
             pause.play();
-            result.setText(rm.tryExecute(rm.seekTask()));
-            data.setAll(rm.getStock().entrySet());
 
+            try {
+                result.setText(rm.tryExecute(rm.seekTask()));
+                data.setAll(rm.getStock().entrySet());
+            } catch (Exception ex) {
+                result.setText("ERROR:  " + ex.getMessage());
+            }
         });
+
+
         HBox.setMargin(execute, new Insets(0, 10, 10, 10));
         HBox.setMargin(status, new Insets(0, 10, 10, 10));
         HBox.setMargin(result, new Insets(0, 10, 10, 10));

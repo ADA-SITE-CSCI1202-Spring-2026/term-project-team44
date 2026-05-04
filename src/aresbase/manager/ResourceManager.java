@@ -29,6 +29,9 @@ public class ResourceManager {
     }
 
     public String addResource(Resource r, Integer i) {
+        if (i == null || i <= 0 || !pricelist.containsKey(r)) {
+            return "Unsuccessful, invalid request";
+        }
         int total = i * pricelist.get(r);
         if (total <= stock.get(Resource.CREDITS)) {
             switch (r) {
@@ -187,10 +190,13 @@ public class ResourceManager {
                 }
             }
             return builder.toString();
+
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            System.out.println("Save file not found: " +  e.getMessage());
+            return "";
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("Could not read save file:  " +  e.getMessage());
+            return "" ;
         }
 
 

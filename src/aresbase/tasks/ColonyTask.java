@@ -23,7 +23,8 @@ public abstract class ColonyTask {
         return switch (data) {
             case "Engineering" -> EngineeringTask.deserialize(data);
             case "LifeSupport" -> LifeSupportTask.deserialize(data);
-            default -> ResearchTask.deserialize(data);
+//            default -> ResearchTask.deserialize(data);
+            default -> throw new IllegalArgumentException("Unknown task type: " + data);
         };
     }
 
